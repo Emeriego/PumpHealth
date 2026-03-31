@@ -1,4 +1,20 @@
-List of Columns and their description
+# WATER PUMP FUNCTIONALITY PREDICTION
+
+This project predicts the functionality status of water pumps across Tanzania using machine learning. Based on features such as location, pump type, installer, water quality, and population served, the models classify pumps as functional, functional needs repair, or non-functional.
+
+ The project includes:
+
+Data cleaning and exploratory analysis to understand pump failure patterns
+
+Feature engineering and model training for multi-class classification
+
+Geospatial visualizations to highlight areas with high failure risk
+
+A dashboard for interactive insights and maintenance planning
+
+The goal is to support decision-making for water infrastructure management and improve access to clean water in Tanzanian communities.
+
+## List of Columns and their description
 
 id – Unique identifier for each waterpoint.
 
@@ -83,43 +99,40 @@ waterpoint_type_group – Grouped waterpoint type.
 status_group – Target variable: pump functionality (functional, functional needs repair, non functional).
 
 
+## HYPOTHESIS.
 
+We propose that:
 
-
-HYPOTHESIS.
-
-we propose that:
-
-Pump type influences functionality
+### Pump type influences functionality
 
 Hypothesis: Some pump types fail more often than others (e.g., handpumps vs communal standpipes).
 
-Installer affects reliability
+### Installer affects reliability
 
 Hypothesis: Pumps installed by certain companies/NGOs are more likely to remain functional.
 
-Geography impacts pump functionality
+### Geography impacts pump functionality
 
 Hypothesis: Pumps in specific regions, districts, or basins may fail more frequently due to environmental or maintenance challenges.
 
-Pump age correlates with failure
+### Pump age correlates with failure
 
 Hypothesis: Older pumps are more likely to need repairs or be non-functional.
 
-Population served / usage affects failure
+### Population served / usage affects failure
 
 Hypothesis: Pumps serving larger populations (population) might break down more due to higher usage.
 
-Water quality impacts pump functionality
+### Water quality impacts pump functionality
 
 Hypothesis: hard water is more likely to damage pump faster than soft water.
 
-Management, that is the organization responsible for maintaining the pump can influence functionality.
+### Management, that is the organization responsible for maintaining the pump can influence functionality.
 
 Hypothesis: Some organisations are better managers than others.
 
 
-RESEARCH QUESTIONS
+## RESEARCH QUESTIONS
 
 
 Do older pumps fail more often than newer ones?
