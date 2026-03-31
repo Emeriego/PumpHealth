@@ -1,0 +1,38 @@
+# Python virtual environment
+.venv/
+env/
+venv/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code settings
+.vscode/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Python package distribution
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Pipenv / Poetry files (if any)
+Pipfile.lock
+poetry.lock
+
+# Optional: Ignore CSV / raw data (see below)
+data/
+data/raw/
