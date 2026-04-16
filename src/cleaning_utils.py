@@ -198,8 +198,6 @@ def save_cleaned_data(df: pd.DataFrame, path: str, index=False):
 
 
 
-
-
 def log_transform_skewed_columns(
     df: pd.DataFrame,
     cols=None,
