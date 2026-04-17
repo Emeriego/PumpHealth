@@ -61,9 +61,6 @@ def data_quality_report(df):
     print(" Missing Values Report:")
     print(report)
 
-    print("\n Duplicates:", df.duplicated().sum())
-
-
 
 def check_numerical_anomalies(df: pd.DataFrame):
     """
@@ -220,8 +217,48 @@ def plot_feature_vs_target(df, feature, target):
 
 
 
+def skewness_report(
+    df: pd.DataFrame,
+    cols=None,
+    exclude_cols=None,
+    threshold=1.0
+):
+    """
+    Reports skewness of numeric columns.
 
-import pandas as pd
+    Parameters:
+    - cols: specific columns to check (optional)
+    - exclude_cols: columns to exclude
+    - threshold: threshold to flag high skew
+    """
+
+    if exclude_cols is None:
+        exclude_cols = []
+
+    numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
+    numeric_cols = numeric_cols.difference(df.columns.intersection(exclude_cols))
+
+    if cols is not None:
+        cols = df.columns.intersection(cols)
+    else:
+        cols = numeric_cols
+
+    skew_vals = df[cols].skew()
+
+    report = pd.DataFrame({
+        "skewness": skew_vals.round(2)
+    })
+
+    report["status"] = report["skewness"].apply(
+        lambda x: "High" if abs(x) > threshold else "OK"
+    )
+
+    report = report.sort_values(by="skewness", ascending=False)
+
+    print("📊 Skewness Report:")
+    print(report)
+
+    return report
 
 def outlier_overview(df: pd.DataFrame, exclude_cols=None):
     """
@@ -302,3 +339,48 @@ def count_unique_values(df: pd.DataFrame, cols=None):
     result = {col: df[col].nunique() for col in cols}
 
     return pd.Series(result).sort_values(ascending=False)
+
+
+def get_numeric_columns(df: pd.DataFrame, exclude_cols=None):
+    """
+    Returns a list of numeric columns.
+
+    Parameters:
+    - exclude_cols: columns to exclude (optional)
+    """
+
+    if exclude_cols is None:
+        exclude_cols = []
+
+    numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
+    numeric_cols = numeric_cols.difference(df.columns.intersection(exclude_cols))
+
+    numeric_cols = list(numeric_cols)
+
+    print("🔢 Numeric Columns:")
+    print(numeric_cols)
+
+    return numeric_cols
+
+
+
+def get_categorical_columns(df: pd.DataFrame, exclude_cols=None):
+    """
+    Returns a list of categorical columns (object + category).
+
+    Parameters:
+    - exclude_cols: columns to exclude (optional)
+    """
+
+    if exclude_cols is None:
+        exclude_cols = []
+
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns
+    cat_cols = cat_cols.difference(df.columns.intersection(exclude_cols))
+
+    cat_cols = list(cat_cols)
+
+    print("🔠 Categorical Columns:")
+    print(cat_cols)
+
+    return cat_cols
