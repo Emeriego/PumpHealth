@@ -14,134 +14,137 @@ A dashboard for interactive insights and maintenance planning
 
 The goal is to support decision-making for water infrastructure management and improve access to clean water in Tanzanian communities.
 
-# Water Pump Functionality Prediction (Tanzania)
+## List of Columns and their description
 
-## Project Overview
+id – Unique identifier for each waterpoint.
 
-This project predicts the functionality status of water pumps across Tanzania using machine learning.
+amount_tsh – Total static head (volume of water pumped).
 
-The goal is to support decision-making in water infrastructure maintenance by identifying pumps that are:
-- Functional
-- Functional but need repair
-- Non-functional
+date_recorded – Date when the waterpoint data was recorded.
 
-By analyzing environmental, geographic, and operational features, the model helps prioritize maintenance efforts and improve access to clean water.
+funder – Organization or individual who funded the pump.
 
----
+gps_height – Elevation of the pump in meters. that is the altitude.
 
-## Objectives
+installer – Organization or individual who installed the pump.
 
-- Predict water pump functionality status
-- Identify key factors influencing pump failure
-- Provide geospatial insights for infrastructure planning
-- Support data-driven maintenance strategies
+longitude – GPS longitude of the pump location.
 
----
+latitude – GPS latitude of the pump location.
 
-## Dataset Description
+wpt_name – Name of the waterpoint.
 
-The dataset contains detailed information about waterpoints in Tanzania.
+num_private – Number of private water connections. people using it. NB: low number might indicate communal usage like seen in some regions in africa.
 
-It includes both **geographical, structural, and operational features** used to predict pump functionality.
+basin – River basin where the pump is located.
 
-### Target Variable
-- `status_group` → Pump functionality status:
-  - functional
-  - functional needs repair
-  - non functional
+subvillage – Subvillage of the pump location.
 
-## Feature Dictionary
+region – Administrative region name.
 
-Below is a structured description of all features used in the dataset:
+region_code – Numeric code representing the region.
 
-## Identification & Location
-- id – Unique identifier for each waterpoint  
-- gps_height – Elevation of the pump in meters  
-- longitude – GPS longitude  
-- latitude – GPS latitude  
-- region – Administrative region  
-- region_code – Numeric region identifier  
-- district_code – District identifier  
-- lga – Local Government Area  
-- ward – Administrative ward  
-- subvillage – Subvillage location  
-- basin – River basin
+district_code – Numeric code for the district.
 
-### Pump Characteristics
-- amount_tsh – Total static head (water pressure potential)  
-- pump type features:
-  - extraction_type
-  - extraction_type_group
-  - extraction_type_class  
-- waterpoint_type – Type of waterpoint  
-- waterpoint_type_group – Grouped type  
-- construction_year – Year pump was built  
-- num_private – Private water connections
+lga – Local government area of the pump.
 
-### Management & Installation
-- installer – Organization that installed pump  
-- funder – Organization that funded pump  
-- scheme_management – Management authority  
-- scheme_name – Name of water scheme  
-- management – Responsible maintenance group  
-- management_group – Grouped management category  
-- recorded_by – Data recording organization  
+ward – Administrative ward of the pump.
 
-### Water Usage & Quality
-- water_quality – Water quality type  
-- quality_group – Grouped quality  
-- quantity – Water availability level  
-- quantity_group – Grouped quantity  
+population – Number of people served by the pump.
 
-### Usage & Social Features
-- population – Number of people served  
-- payment – Payment method  
-- payment_type – Grouped payment type  
-- public_meeting – Whether public meeting was held  
-- permit – Whether pump is legally permitted  
+public_meeting – Indicates if a public meeting was held for the pump.
 
-### Source Information
-- source – Water source type  
-- source_type – Detailed source category  
-- source_class – Ground/surface classification  
+recorded_by – Name of the organization/person who recorded the data.
 
-### Temporal Feature
-- date_recorded – Date of data collection
----
+scheme_management – Organization managing the water scheme.
 
-## Key Hypotheses
+scheme_name – Name of the water scheme.
 
-- Pump type affects failure rate
-- Older pumps are more likely to fail
-- Certain installers produce more reliable pumps
-- Geography influences pump functionality
-- Higher usage increases breakdown probability
-- Water quality impacts pump durability
-- Management quality affects long-term performance
+permit – Whether the pump has a legal permit.
 
----
+construction_year – Year the pump was constructed.
 
-## Research Questions
+extraction_type – Method used to extract water.
 
-- Which factors most influence pump failure?
-- Do older pumps fail more often?
-- Are certain regions more prone to breakdowns?
-- Which installers produce the most reliable pumps?
-- How does population usage affect pump status?
-- What role does water quality play?
-- Which pump types are most sustainable?
+extraction_type_group – Grouped version of extraction type.
 
----
+extraction_type_class – Higher-level classification of extraction type.
 
-## Project Workflow
+management – Organization responsible for maintaining the pump.
 
-1. Data Cleaning & Preprocessing
-2. Exploratory Data Analysis (EDA)
-3. Feature Engineering
-4. Model Training (Multi-class classification)
-5. Model Evaluation
-6. Geospatial Analysis & Visualization
+management_group – Grouped management type.
 
----
+payment – Payment method for water usage.
 
-## Project Structure
+payment_type – Grouped payment information.
+
+water_quality – Quality of water (soft, salty, etc.).
+
+quality_group – Grouped water quality categories.
+
+quantity – Amount of water available (enough, seasonal, etc.).
+
+quantity_group – Grouped quantity categories.
+
+source – Water source type (spring, dam, borehole, etc.).
+
+source_type – More specific type of water source.
+
+source_class – Source classification (groundwater, surface, etc.).
+
+waterpoint_type – Physical type of waterpoint (e.g., communal standpipe).
+
+waterpoint_type_group – Grouped waterpoint type.
+
+status_group – Target variable: pump functionality (functional, functional needs repair, non functional).
+
+
+## HYPOTHESIS.
+
+We propose that:
+
+### Pump type influences functionality
+
+Hypothesis: Some pump types fail more often than others (e.g., handpumps vs communal standpipes).
+
+### Installer affects reliability
+
+Hypothesis: Pumps installed by certain companies/NGOs are more likely to remain functional.
+
+### Geography impacts pump functionality
+
+Hypothesis: Pumps in specific regions, districts, or basins may fail more frequently due to environmental or maintenance challenges.
+
+### Pump age correlates with failure
+
+Hypothesis: Older pumps are more likely to need repairs or be non-functional.
+
+### Population served / usage affects failure
+
+Hypothesis: Pumps serving larger populations (population) might break down more due to higher usage.
+
+### Water quality impacts pump functionality
+
+Hypothesis: hard water is more likely to damage pump faster than soft water.
+
+### Management, that is the organization responsible for maintaining the pump can influence functionality.
+
+Hypothesis: Some organisations are better managers than others.
+
+
+## RESEARCH QUESTIONS
+
+
+Do older pumps fail more often than newer ones?
+
+Are pumps serving larger populations more likely to be non-functional?
+
+Are certain regions or basins more prone to pump failures?
+
+How does the installer relate to long-term functionality?
+
+Which pump types have the highest proportion of functional pumps?
+
+Does water quality or quantity influence pump status? 
+
+How does the pump manager relate to long-term functionality?
