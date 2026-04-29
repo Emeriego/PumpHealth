@@ -287,6 +287,78 @@ def cap_outliers_iqr(
     return df
 
 
+def replace_negatives_with_median(df: pd.DataFrame, col: str, inplace=False):
+    """
+    Replaces negative values in a column with the column median.
+    """
 
+    if not inplace:
+        df = df.copy()
+
+    if col not in df.columns:
+        raise ValueError(f"{col} not found in dataframe")
+
+    # calculate median (excluding negatives)
+    median_val = df.loc[df[col] >= 0, col].median()
+
+    # count negatives
+    count_neg = (df[col] < 0).sum()
+
+    # replace
+    df.loc[df[col] < 0, col] = median_val
+
+    print(f"Replaced {count_neg} negative values in '{col}' with median ({median_val:.2f})")
+
+    return df
+
+
+def replace_zeros_with_median(df: pd.DataFrame, col: str, inplace=False):
+    """
+    Replaces zero values in a column with the column median.
+    """
+
+    if not inplace:
+        df = df.copy()
+
+    if col not in df.columns:
+        raise ValueError(f"{col} not found in dataframe")
+
+    # compute median excluding zeros
+    median_val = df.loc[df[col] != 0, col].median()
+
+    # count zeros
+    zero_count = (df[col] == 0).sum()
+
+    # replace
+    df.loc[df[col] == 0, col] = median_val
+
+    print(f"Replaced {zero_count} zero values in '{col}' with median ({median_val:.4f})")
+
+    return df
+
+
+
+def impute_geo_by_location(df: pd.DataFrame, lat_col="latitude", lon_col="longitude"):
+    """
+    Replaces zero coordinates using ward → district median values.
+    """
+
+    df = df.copy()
+
+    # Step 1: Replace zeros with NaN
+    df.loc[df[lat_col] == 0, lat_col] = np.nan
+    df.loc[df[lon_col] == 0, lon_col] = np.nan
+
+    # Step 2: Fill by ward
+    df[lat_col] = df.groupby("ward")[lat_col].transform(lambda x: x.fillna(x.median()))
+    df[lon_col] = df.groupby("ward")[lon_col].transform(lambda x: x.fillna(x.median()))
+
+    # Step 3: Fallback → district
+    df[lat_col] = df.groupby("district_code")[lat_col].transform(lambda x: x.fillna(x.median()))
+    df[lon_col] = df.groupby("district_code")[lon_col].transform(lambda x: x.fillna(x.median()))
+
+    print("Filled missing coordinates using ward → district median")
+
+    return df
 
 
