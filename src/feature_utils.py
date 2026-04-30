@@ -14,7 +14,8 @@ def basic_clean(df: pd.DataFrame):
         "id", "wpt_name", "recorded_by", "scheme_name",
         "num_private", "extraction_type_group",
         "payment_type", "quantity_group", "water_quality", "source",
-        "waterpoint_type_group", "subvillage", "extraction_type_class"
+        "waterpoint_type_group", "subvillage", "extraction_type_class", "region_code",
+        "district_code", "ward"
     ])
 
     df = standardize_placeholders(df)
@@ -191,17 +192,15 @@ def apply_value_replacement(
 def fit_geo_imputer(df: pd.DataFrame, lat_col="latitude", lon_col="longitude"):
     df = df.copy()
 
+    # treat 0 as missing
     df.loc[df[lat_col] == 0, lat_col] = np.nan
     df.loc[df[lon_col] == 0, lon_col] = np.nan
 
-    ward_stats = df.groupby("ward")[[lat_col, lon_col]].median()
-    district_stats = df.groupby("district_code")[[lat_col, lon_col]].median()
-
+    lga_stats = df.groupby("lga")[[lat_col, lon_col]].median()
     global_stats = df[[lat_col, lon_col]].median()
 
     return {
-        "ward": ward_stats,
-        "district": district_stats,
+        "lga": lga_stats,
         "global": global_stats
     }
 
@@ -212,34 +211,25 @@ def apply_geo_imputer(df: pd.DataFrame, stats: dict, lat_col="latitude", lon_col
     df.loc[df[lat_col] == 0, lat_col] = np.nan
     df.loc[df[lon_col] == 0, lon_col] = np.nan
 
-    ward_stats = stats["ward"]
-    district_stats = stats["district"]
+    lga_stats = stats["lga"]
     global_stats = stats["global"]
 
     def fill(row, col):
-        ward = row["ward"]
-        district = row["district_code"]
+        lga = row["lga"]
 
-        # ward
-        if ward in ward_stats.index:
-            val = ward_stats.loc[ward, col]
+        # lga-level imputation
+        if lga in lga_stats.index:
+            val = lga_stats.loc[lga, col]
             if pd.notna(val):
                 return val
 
-        # district
-        if district in district_stats.index:
-            val = district_stats.loc[district, col]
-            if pd.notna(val):
-                return val
-
-        # global fallback (NEW)
+        # fallback
         return global_stats[col]
 
     df[lat_col] = df.apply(lambda r: fill(r, lat_col), axis=1)
     df[lon_col] = df.apply(lambda r: fill(r, lon_col), axis=1)
 
     return df
-
 
 
 def fit_log_transform(df: pd.DataFrame, cols=None, exclude_cols=None, skew_threshold=1.0):
@@ -270,36 +260,45 @@ def apply_log_transform(df: pd.DataFrame, cols: list, suffix="_log"):
     return df
 
 
-
 def create_regular_features(df: pd.DataFrame):
     df = df.copy()
 
-    # pump age
-    if "construction_year" in df.columns and "date_recorded" in df.columns:
-        df["pump_age"] = df["date_recorded"].dt.year - df["construction_year"]
+    # --- date handling first ---
+    if "date_recorded" in df.columns:
+        df["date_recorded"] = pd.to_datetime(df["date_recorded"])
+
+        df["recorded_year"] = df["date_recorded"].dt.year
+        df["recorded_month"] = df["date_recorded"].dt.month
+
+        df = df.drop(columns=["date_recorded"])
+
+    # --- pump age ---
+    if "construction_year" in df.columns:
+        df["pump_age"] = df["recorded_year"] - df["construction_year"]
         df["pump_age"] = df["pump_age"].clip(lower=0, upper=100)
 
         df["pump_is_new"] = (df["pump_age"] <= 3).astype(int)
 
+        # ordinal encoding (IMPORTANT FIX)
         df["pump_age_band"] = pd.cut(
             df["pump_age"],
             bins=[0, 5, 10, 20, 100],
-            labels=["new", "young", "mid", "old"]
-            )
-    # height bands
+            labels=[0, 1, 2, 3]   # numeric now
+        ).astype(float)
+
+    # --- height bands (ordinal encoding) ---
     if "gps_height" in df.columns:
         df["height_band"] = pd.cut(
             df["gps_height"],
             bins=[-100, 0, 500, 1000, 1500, 3000],
-            labels=["below_sea", "low", "mid", "high", "very_high"]
-        )
+            labels=[0, 1, 2, 3, 4]   # numeric now
+        ).astype(float)
 
-  
-    # population log
+    # --- population ---
     if "population" in df.columns:
         df["population_log"] = np.log1p(df["population"])
 
-    # quantity score mapping
+    # --- quantity mapping ---
     if "quantity" in df.columns:
         quantity_map = {
             "dry": 0,
@@ -316,11 +315,6 @@ def create_regular_features(df: pd.DataFrame):
 def create_binary_features(df: pd.DataFrame):
     df = df.copy()
 
-    # population exists
-    if "population" in df.columns:
-        df["has_population"] = (df["population"] > 0).astype(int)
-        df["population_is_zero"] = (df["population"] == 0).astype(int)
-
     # payment signal
     if "payment" in df.columns:
         df["is_paid_water"] = (df["payment"] != "never pay").astype(int)
@@ -330,3 +324,5 @@ def create_binary_features(df: pd.DataFrame):
         df["is_water_safe"] = (df["quality_group"] == "good").astype(int)
 
     return df
+
+
