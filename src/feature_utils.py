@@ -58,7 +58,7 @@ def apply_missing_values(df: pd.DataFrame, stats: dict):
     return df
 
 
-def fit_rare_categories(df: pd.DataFrame, cols: list, top_n=10):
+def fit_rare_categories(df: pd.DataFrame, cols: list, top_n=25):
     stats = {}
 
     for col in df.columns.intersection(cols):
@@ -325,4 +325,28 @@ def create_binary_features(df: pd.DataFrame):
 
     return df
 
+def target_encode_lga(X_train, X_test, y_train, target_col="status_group", cat_col="lga"):
+    # 1. combine train features + target
+    train_df = X_train.copy()
+    train_df[target_col] = y_train
 
+    # 2. compute failure rate per LGA
+    lga_map = train_df.groupby(cat_col)[target_col].apply(
+        lambda x: (x == "non functional").mean()
+    )
+
+    # 3. global fallback rate
+    global_rate = (y_train == "non functional").mean()
+
+    # 4. apply mapping
+    X_train = X_train.copy()
+    X_test = X_test.copy()
+
+    X_train[f"{cat_col}_te"] = X_train[cat_col].map(lga_map).fillna(global_rate)
+    X_test[f"{cat_col}_te"] = X_test[cat_col].map(lga_map).fillna(global_rate)
+
+    # 5. drop original column
+    X_train = X_train.drop(columns=[cat_col])
+    X_test = X_test.drop(columns=[cat_col])
+
+    return X_train, X_test, lga_map
