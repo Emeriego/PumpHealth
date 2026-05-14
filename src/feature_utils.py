@@ -9,14 +9,8 @@ from src.cleaning_utils import (
     drop_duplicates,
 )
 
-def basic_clean(df: pd.DataFrame):
-    df = drop_irrelevant_columns(df, [
-        "id", "wpt_name", "recorded_by", "scheme_name",
-        "num_private", "extraction_type_group",
-        "payment_type", "quantity_group", "water_quality", "source",
-        "waterpoint_type_group", "subvillage", "extraction_type_class", "region_code",
-        "district_code", "ward"
-    ])
+def basic_clean(df: pd.DataFrame, cols_to_drop=None):
+    df = drop_irrelevant_columns(df, cols_to_drop=cols_to_drop or [])
 
     df = standardize_placeholders(df)
 
@@ -24,7 +18,7 @@ def basic_clean(df: pd.DataFrame):
 
     df = convert_to_datetime(df, cols=["date_recorded"])
 
-    df = drop_duplicates(df)
+    # df = drop_duplicates(df)
 
     return df
 
@@ -58,7 +52,7 @@ def apply_missing_values(df: pd.DataFrame, stats: dict):
     return df
 
 
-def fit_rare_categories(df: pd.DataFrame, cols: list, top_n=25):
+def fit_rare_categories(df: pd.DataFrame, cols: list, top_n=10):
     stats = {}
 
     for col in df.columns.intersection(cols):
@@ -325,28 +319,61 @@ def create_binary_features(df: pd.DataFrame):
 
     return df
 
-def target_encode_lga(X_train, X_test, y_train, target_col="status_group", cat_col="lga"):
-    # 1. combine train features + target
-    train_df = X_train.copy()
-    train_df[target_col] = y_train
+# def target_encode_col(X_train, X_test, y_train, target_col="status_group", cat_col="lga"):
+#     # 1. combine train features + target
+#     train_df = X_train.copy()
+#     train_df[target_col] = y_train
 
-    # 2. compute failure rate per LGA
-    lga_map = train_df.groupby(cat_col)[target_col].apply(
+#     # 2. compute failure rate per LGA
+#     lga_map = train_df.groupby(cat_col)[target_col].apply(
+#         lambda x: (x == "non functional").mean()
+#     )
+
+#     # 3. global fallback rate
+#     global_rate = (y_train == "non functional").mean()
+
+#     # 4. apply mapping
+#     X_train = X_train.copy()
+#     X_test = X_test.copy()
+
+#     X_train[f"{cat_col}_te"] = X_train[cat_col].map(lga_map).fillna(global_rate)
+#     X_test[f"{cat_col}_te"] = X_test[cat_col].map(lga_map).fillna(global_rate)
+
+#     # 5. drop original column
+#     X_train = X_train.drop(columns=[cat_col])
+#     X_test = X_test.drop(columns=[cat_col])
+
+#     return X_train, X_test, lga_map
+
+
+def fit_target_encoder(X_train, y_train, cat_col="lga"):
+    
+    train_df = X_train.copy()
+    train_df["target"] = y_train
+
+    # failure rate per category
+    target_map = train_df.groupby(cat_col)["target"].apply(
         lambda x: (x == "non functional").mean()
     )
 
-    # 3. global fallback rate
+    # global fallback
     global_rate = (y_train == "non functional").mean()
 
-    # 4. apply mapping
-    X_train = X_train.copy()
-    X_test = X_test.copy()
+    return target_map, global_rate
 
-    X_train[f"{cat_col}_te"] = X_train[cat_col].map(lga_map).fillna(global_rate)
-    X_test[f"{cat_col}_te"] = X_test[cat_col].map(lga_map).fillna(global_rate)
 
-    # 5. drop original column
-    X_train = X_train.drop(columns=[cat_col])
-    X_test = X_test.drop(columns=[cat_col])
+def apply_target_encoder(df, target_map, global_rate, cat_col="lga"):
 
-    return X_train, X_test, lga_map
+    df = df.copy()
+
+    # create encoded column
+    df[f"{cat_col}_te"] = (
+        df[cat_col]
+        .map(target_map)
+        .fillna(global_rate)
+    )
+
+    # drop original categorical column
+    df = df.drop(columns=[cat_col])
+
+    return df
