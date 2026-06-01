@@ -3,7 +3,26 @@ import numpy as np
 import joblib
 
 from src.feature_utils import create_regular_features
+from src.data_utils import load_data
+from src.cleaning_utils import (save_cleaned_data, drop_irrelevant_columns, drop_duplicates)
 
+
+from src.feature_utils import (
+basic_clean,
+apply_missing_values,
+apply_geo_imputer,
+apply_log_transform,
+apply_value_replacement,
+apply_outlier_caps,
+apply_rare_categories,
+create_regular_features,
+create_binary_features,
+apply_target_encoder,
+apply_frequency_encoding,
+apply_ohe
+
+
+)
 
 # --------------------------------------------------
 # LOAD ARTIFACTS (ONLY ONCE)
@@ -11,20 +30,25 @@ from src.feature_utils import create_regular_features
 
 model = joblib.load("models/model.pkl")
 
-ohe = joblib.load("models/ohe.pkl")
+missing_stats = joblib.load("models/missing_stats.pkl")
+rare_stats = joblib.load("models/rare_stats.pkl")
+val_repl_stats = joblib.load("models/val_repl_stats.pkl")
+geo_stats = joblib.load("models/geo_stats.pkl")
+
+log_cols = joblib.load("models/log_cols.pkl")
 
 freq_maps = joblib.load("models/freq_maps.pkl")
 
-target_encoder = joblib.load("models/lga_target_encoder.pkl")
+ohe = joblib.load("models/ohe.pkl")
 
-feature_columns = joblib.load("models/feature_columns.pkl")
+lga_map = joblib.load("models/lga_map.pkl")
+global_rate = joblib.load("models/global_rate.pkl")
 
-lga_map = target_encoder["lga_map"]
-global_rate = target_encoder["global_rate"]
+low_card_cols = joblib.load("models/low_card_cols.pkl")
+high_card_cols = joblib.load("models/high_card_cols.pkl")
 
 
-low_card_cols = ohe.feature_names_in_.tolist()  # safer than manual list
-high_card_cols = list(freq_maps.keys())
+selected_features = joblib.load("models/selected_features.pkl")
 
 
 # --------------------------------------------------
