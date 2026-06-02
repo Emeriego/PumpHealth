@@ -1,8 +1,16 @@
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
 import streamlit as st
+import os
+
+sys.path.append(os.path.abspath(".."))
 
 from components.single import render_single_prediction
 from components.batch import render_batch_prediction
-
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -94,5 +102,5 @@ elif mode == "Batch Prediction (CSV Upload)":
 st.divider()
 
 st.caption(
-    "Water Pump Status Predictor • Streamlit Application"
+    "Water Pump Status Predictor By PumpHealth Team | Powered by Streamlit"
 )

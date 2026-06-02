@@ -1,10 +1,11 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
 
+
 from src.feature_utils import create_regular_features
-from src.data_utils import load_data
-from src.cleaning_utils import (save_cleaned_data, drop_irrelevant_columns, drop_duplicates)
+from src.cleaning_utils import (drop_irrelevant_columns, drop_duplicates)
 
 
 from src.feature_utils import (
@@ -13,7 +14,6 @@ apply_missing_values,
 apply_geo_imputer,
 apply_log_transform,
 apply_value_replacement,
-apply_outlier_caps,
 apply_rare_categories,
 create_regular_features,
 create_binary_features,
@@ -55,104 +55,141 @@ selected_features = joblib.load("models/selected_features.pkl")
 # MAIN PREDICTION FUNCTION (SINGLE)
 # --------------------------------------------------
 
-def predict_pump_status(df: pd.DataFrame):
+def preprocess_input(df: pd.DataFrame):
 
     df = df.copy()
 
-    # -------------------------
-    # 1. FEATURE ENGINEERING
-    # -------------------------
-    df = create_regular_features(df)
-
-    # -------------------------
-    # 2. TARGET ENCODING (LGA)
-    # -------------------------
-    if "lga" in df.columns:
-        df["lga_te"] = (
-            df["lga"]
-            .map(lga_map)
-            .fillna(global_rate)
-        )
-        df = df.drop(columns=["lga"])
-
-    # -------------------------
-    # 3. FREQUENCY ENCODING
-    # -------------------------
-    for col in high_card_cols:
-        if col in df.columns:
-            df[col + "_freq"] = df[col].map(freq_maps[col]).fillna(0)
-            df = df.drop(columns=[col])
-
-    # -------------------------
-    # 4. ONE HOT ENCODING
-    # -------------------------
-    ohe_input = df[low_card_cols]
-
-    ohe_df = pd.DataFrame(
-        ohe.transform(ohe_input),
-        columns=ohe.get_feature_names_out(low_card_cols),
-        index=df.index
+    # --------------------------------------------------
+    # 1. BASIC CLEANING
+    # --------------------------------------------------
+    df = basic_clean(
+        df,
+        cols_to_drop=[
+            "id",
+            "wpt_name",
+            "recorded_by",
+            "scheme_name",
+            "num_private",
+            "extraction_type_group",
+            "payment_type",
+            "quantity_group",
+            "water_quality",
+            "source",
+            "waterpoint_type_group",
+            "subvillage",
+            "extraction_type_class",
+            "region_code",
+            "district_code",
+            "ward",
+            "region"
+        ]
     )
 
-    df = df.drop(columns=low_card_cols).join(ohe_df)
+    # --------------------------------------------------
+    # 2. MISSING VALUES
+    # --------------------------------------------------
+    df = apply_missing_values(
+        df,
+        missing_stats
+    )
 
-    # -------------------------
-    # 5. ALIGN COLUMNS
-    # -------------------------
+    # --------------------------------------------------
+    # 3. RARE CATEGORIES
+    # --------------------------------------------------
+    df = apply_rare_categories(
+        df,
+        rare_stats
+    )
+
+    # --------------------------------------------------
+    # 4. VALUE REPLACEMENT
+    # --------------------------------------------------
+    df = apply_value_replacement(
+        df,
+        val_repl_stats,
+        cols=["gps_height", "population"],
+        treat_zero_as_nan=["gps_height", "population"],
+        treat_negative_as_nan=["gps_height"],
+        group_cols=["lga"]
+    )
+
+    # --------------------------------------------------
+    # 5. LOG TRANSFORMS
+    # --------------------------------------------------
+    df = apply_log_transform(
+        df,
+        log_cols
+    )
+
+    # --------------------------------------------------
+    # 6. GEO IMPUTATION
+    # --------------------------------------------------
+    df = apply_geo_imputer(
+        df,
+        geo_stats,
+        lat_col="latitude",
+        lon_col="longitude"
+    )
+
+    # --------------------------------------------------
+    # 7. FEATURE ENGINEERING
+    # --------------------------------------------------
+    df = create_regular_features(df)
+
+    df = create_binary_features(df)
+
+    # --------------------------------------------------
+    # 8. TARGET ENCODING
+    # --------------------------------------------------
+    df = apply_target_encoder(
+        df,
+        lga_map,
+        global_rate,
+        cat_col="lga"
+    )
+
+    # --------------------------------------------------
+    # 9. FREQUENCY ENCODING
+    # --------------------------------------------------
+    df = apply_frequency_encoding(
+        df,
+        freq_maps
+    )
+
+    # --------------------------------------------------
+    # 10. ONE HOT ENCODING
+    # --------------------------------------------------
+    df = apply_ohe(
+        df,
+        ohe,
+        low_card_cols
+    )
+
+   
+
+    return df
+
+def predict_pump_status(df: pd.DataFrame):
+
+    df = preprocess_input(df)
+
     df = df.reindex(
-        columns=feature_columns,
+        columns=selected_features,
         fill_value=0
     )
 
-    # -------------------------
-    # 6. PREDICTION
-    # -------------------------
-    prediction = model.predict(df)
+    prediction = model.predict(df)[0]
 
-    return prediction[0]
-
-
-# --------------------------------------------------
-# BATCH PREDICTION
-# --------------------------------------------------
+    return prediction
 
 def predict_batch(df: pd.DataFrame):
 
-    df = df.copy()
+    df = preprocess_input(df)
 
-    # feature engineering
-    df = create_regular_features(df)
+    df = df.reindex(columns=selected_features, fill_value=0)
 
-    # target encoding
-    if "lga" in df.columns:
-        df["lga_te"] = (
-            df["lga"]
-            .map(lga_map)
-            .fillna(global_rate)
-        )
-        df = df.drop(columns=["lga"])
-
-    # frequency encoding
-    for col in high_card_cols:
-        if col in df.columns:
-            df[col + "_freq"] = df[col].map(freq_maps[col]).fillna(0)
-            df = df.drop(columns=[col])
-
-    # OHE
-    ohe_df = pd.DataFrame(
-        ohe.transform(df[low_card_cols]),
-        columns=ohe.get_feature_names_out(low_card_cols),
-        index=df.index
-    )
-
-    df = df.drop(columns=low_card_cols).join(ohe_df)
-
-    # align
-    df = df.reindex(columns=feature_columns, fill_value=0)
-
-    # predictions
     preds = model.predict(df)
 
+    df = df.copy()
     df["prediction"] = preds
-
     return df
