@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+
 
 from src.cleaning_utils import (
     drop_irrelevant_columns,
@@ -269,15 +271,15 @@ def create_regular_features(df: pd.DataFrame):
     # --- pump age ---
     if "construction_year" in df.columns:
         df["pump_age"] = df["recorded_year"] - df["construction_year"]
-        df["pump_age"] = df["pump_age"].clip(lower=0, upper=100)
+        df["pump_age"] = df["pump_age"].clip(lower=0, upper=100) # Clipping Unrealistic Ages
 
         df["pump_is_new"] = (df["pump_age"] <= 3).astype(int)
 
-        # ordinal encoding (IMPORTANT FIX)
         df["pump_age_band"] = pd.cut(
             df["pump_age"],
-            bins=[0, 5, 10, 20, 100],
-            labels=[0, 1, 2, 3]   # numeric now
+            bins=[-1, 5, 10, 20, 100],
+            labels=[0, 1, 2, 3],
+            include_lowest=True
         ).astype(float)
 
     # --- height bands (ordinal encoding) ---
@@ -375,5 +377,83 @@ def apply_target_encoder(df, target_map, global_rate, cat_col="lga"):
 
     # drop original categorical column
     df = df.drop(columns=[cat_col])
+
+    return df
+
+
+def fit_frequency_encoding(
+    df: pd.DataFrame,
+    cols: list
+):
+    freq_maps = {}
+
+    for col in df.columns.intersection(cols):
+        freq_maps[col] = (
+            df[col]
+            .value_counts(normalize=True)
+        )
+
+    return freq_maps
+
+def apply_frequency_encoding(
+    df: pd.DataFrame,
+    freq_maps: dict,
+    drop_original=True
+):
+    df = df.copy()
+
+    for col, mapping in freq_maps.items():
+
+        if col in df.columns:
+
+            df[f"{col}_freq"] = (
+                df[col]
+                .map(mapping)
+                .fillna(0)
+            )
+
+    if drop_original:
+        cols_to_drop = [
+            col for col in freq_maps.keys()
+            if col in df.columns
+        ]
+
+        df = df.drop(columns=cols_to_drop)
+
+    return df
+
+
+
+def fit_ohe(
+    df: pd.DataFrame,
+    cols: list
+):
+    ohe = OneHotEncoder(
+        handle_unknown="ignore",
+        sparse_output=False
+    )
+
+    ohe.fit(df[cols])
+
+    return ohe
+
+def apply_ohe(
+    df: pd.DataFrame,
+    ohe,
+    cols: list,
+    drop_original=True
+):
+    df = df.copy()
+
+    ohe_df = pd.DataFrame(
+        ohe.transform(df[cols]),
+        columns=ohe.get_feature_names_out(cols),
+        index=df.index
+    )
+
+    if drop_original:
+        df = df.drop(columns=cols)
+
+    df = df.join(ohe_df)
 
     return df

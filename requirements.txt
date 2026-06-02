@@ -4,6 +4,7 @@ matplotlib
 seaborn
 scikit-learn
 jupyter
-
+streamlit
+joblib
 # pip install -r requirements.txt - to install requirements
 
