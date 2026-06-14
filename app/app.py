@@ -102,5 +102,5 @@ elif mode == "Batch Prediction (CSV Upload)":
 st.divider()
 
 st.caption(
-    "Water Pump Status Predictor By PumpHealth Team | Powered by Streamlit"
+    "Water Pump Status Predictor By PumpHealth | Powered by Redi School"
 )

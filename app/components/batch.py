@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
-from src.predict_pipeline import predict_pump_status, predict_batch
+from src.predict_pipeline import predict_batch
 
 
 def render_batch_prediction():
 
-    st.header("📊 Batch Prediction (CSV Upload)")
+    st.header("Batch Prediction (CSV Upload)")
 
     st.markdown(
         """
@@ -14,7 +15,26 @@ def render_batch_prediction():
         The system will generate predictions for each row.
         """
     )
+    st.markdown("""
+    <style>
 
+    div.stButton > button {
+        background-color: #2563eb;
+        color: white;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 0.75rem 2rem;
+        height: 60px;
+        width: 100%;
+    }
+
+    div.stButton > button:hover {
+        background-color: #1d4ed8;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
     # --------------------------------------------------
     # FILE UPLOAD
     # --------------------------------------------------
@@ -35,7 +55,7 @@ def render_batch_prediction():
             f"File loaded: {df.shape[0]} rows × {df.shape[1]} columns"
         )
 
-        st.subheader("🔎 Data Preview")
+        st.subheader("Data Preview")
         st.dataframe(df.head())
 
         # --------------------------------------------------
@@ -80,7 +100,7 @@ def render_batch_prediction():
         # RUN PREDICTION
         # --------------------------------------------------
 
-        if st.button("🚀 Run Batch Prediction"):
+        if st.button("Run Batch Prediction"):
 
             with st.spinner("Generating predictions..."):
 
@@ -88,14 +108,39 @@ def render_batch_prediction():
 
             st.success("Prediction completed!")
 
-            st.subheader("📈 Results Preview")
-            st.dataframe(results.head())
+            st.subheader("Results Preview")
+            st.write(f"Showing first 100 of {len(results):,} predictions")
 
+            # st.dataframe(
+            #     results.head(100),
+            #     use_container_width=True
+            # )
+            # Map prediction codes to labels
+            prediction_map = {
+                0: "Functional",
+                1: "Functional Needs Repair",
+                2: "Non Functional"
+            }
+
+            # Create a copy so the original results remain unchanged
+            display_results = results.copy()
+
+            display_results["prediction"] = (
+                display_results["prediction"]
+                .map(prediction_map)
+                .fillna(display_results["prediction"])
+            )
+
+            # Display the first 100 rows
+            st.dataframe(
+                display_results.head(100),
+                use_container_width=True
+            )
             # --------------------------------------------------
             # DOWNLOAD RESULTS
             # --------------------------------------------------
 
-            csv = results.to_csv(index=False).encode("utf-8")
+            csv = display_results.to_csv(index=False).encode("utf-8")
 
             st.download_button(
                 label="⬇️ Download Predictions",
@@ -105,16 +150,31 @@ def render_batch_prediction():
             )
 
             # --------------------------------------------------
-            # OPTIONAL SUMMARY
+            # SUMMARY
             # --------------------------------------------------
 
-            if "prediction" in results.columns:
+            if "prediction" in display_results.columns:
 
-                st.subheader("📊 Prediction Summary")
+                st.subheader("Prediction Summary")
 
-                st.write(
-                    results["prediction"].value_counts()
+                summary = display_results["prediction"].value_counts()
+
+
+                st.dataframe(
+                    summary.rename_axis("Status")
+                        .reset_index(name="Count"),
+                    use_container_width=True
                 )
+
+                fig, ax = plt.subplots(figsize=(3, 3))
+
+                ax.pie(
+                    summary.values,
+                    labels=summary.index,
+                    autopct="%1.1f%%"
+                )
+
+                st.pyplot(fig)
 
     except Exception as e:
 

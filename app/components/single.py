@@ -6,12 +6,12 @@ from src.predict_pipeline import predict_pump_status
 
 def render_single_prediction():
 
-    st.header("🔍 Single Pump Prediction")
+    st.header("Single Pump Prediction")
 
     st.markdown(
         "Enter pump details below to predict the operational status of a water pump."
     )
-
+  
     # --------------------------------------------------
     # INPUT FORM
     # --------------------------------------------------
@@ -22,7 +22,7 @@ def render_single_prediction():
         # LOCATION DETAILS
         # ==================================================
 
-        st.subheader("📍 Location Details")
+        st.subheader("Location Details")
 
         col1, col2 = st.columns(2)
 
@@ -60,7 +60,7 @@ def render_single_prediction():
         # PUMP DETAILS
         # ==================================================
 
-        st.subheader("💧 Pump Details")
+        st.subheader("Pump Details")
 
         col3, col4 = st.columns(2)
 
@@ -152,7 +152,7 @@ def render_single_prediction():
         # MANAGEMENT & FUNDING
         # ==================================================
 
-        st.subheader("🏢 Management & Funding")
+        st.subheader("Management & Funding")
 
         col5, col6 = st.columns(2)
 
@@ -259,7 +259,7 @@ def render_single_prediction():
         st.divider()
 
         submitted = st.form_submit_button(
-            "🚀 Predict Pump Status"
+            "Predict Pump Status"
         )
 
     # --------------------------------------------------
@@ -294,7 +294,7 @@ def render_single_prediction():
             "waterpoint_type": waterpoint_type
         }])
 
-        st.subheader("📦 Input Summary")
+        st.subheader("Input Summary")
         st.dataframe(input_data)
 
         try:
@@ -306,9 +306,9 @@ def render_single_prediction():
                 )
 
             label_map = {
-                0: "❌ Non Functional",
-                1: "⚠️ Functional Needs Repair",
-                2: "✅ Functional"
+                0: "Non Functional",
+                1: "Functional Needs Repair",
+                2: "Functional"
             }
 
             result = label_map.get(

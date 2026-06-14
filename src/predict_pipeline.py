@@ -25,7 +25,7 @@ apply_ohe
 )
 
 # --------------------------------------------------
-# LOAD ARTIFACTS (ONLY ONCE)
+# LOAD ARTIFACTS
 # --------------------------------------------------
 
 model = joblib.load("models/model.pkl")
