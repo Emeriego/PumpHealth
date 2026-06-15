@@ -6,5 +6,8 @@ scikit-learn
 jupyter
 streamlit
 joblib
+streamlit
+pandas
+xgboost
 # pip install -r requirements.txt - to install requirements
 
